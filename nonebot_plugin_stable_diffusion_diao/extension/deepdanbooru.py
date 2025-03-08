@@ -1,4 +1,3 @@
-import aiohttp
 import base64
 
 from nonebot import on_command, Bot
@@ -11,7 +10,7 @@ from typing import Union
 from .translation import translate
 from .safe_method import send_forward_msg, risk_control
 from ..config import config, __SUPPORTED_MESSAGEEVENT__, message_event_type
-from ..utils import pic_audit_standalone, txt_audit
+from ..utils import pic_audit_standalone, txt_audit, aiohttp_func
 from ..aidraw import get_message_at
 
 from .sd_extra_api_func import SdAPI
@@ -42,11 +41,8 @@ async def deepdanbooru_handle(event: __SUPPORTED_MESSAGEEVENT__, bot: Bot):
         url = await SdAPI.get_qq_img_url(event)
 
     if url:
-        async with aiohttp.ClientSession() as session:
-            logger.info(f"正在获取图片")
-            async with session.get(url) as resp:
-                bytes_ = await resp.read()
-        
+        bytes_ = await aiohttp_func("get", url, byte=True)
+
         if config.novelai_tagger_site:
             resp_tuple = await pic_audit_standalone(bytes_, True)
             if resp_tuple is None:

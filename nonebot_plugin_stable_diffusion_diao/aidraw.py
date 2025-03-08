@@ -4,7 +4,6 @@ import random
 import json
 import ast
 import traceback
-import aiohttp
 
 from collections import deque
 from copy import deepcopy
@@ -27,7 +26,7 @@ from nonebot import Bot
 from nonebot_plugin_alconna import UniMessage
 
 from .config import config, redis_client, __SUPPORTED_MESSAGEEVENT__, message_event_type
-from .utils import txt_audit, get_generate_info
+from .utils import txt_audit, get_generate_info, aiohttp_func
 from .utils.data import htags
 from .backend import AIDRAW
 from .extension.anlas import anlas_set
@@ -631,11 +630,8 @@ CFG Scale:{fifo.scale}
             if img_url and not self.fifo.ni:
                 img_url = img_url.replace("gchat.qpic.cn", "multimedia.nt.qq.com.cn")
                 if config.novelai_paid:
-                    async with aiohttp.ClientSession() as session:
-                        logger.info(f"检测到图片，自动切换到以图生图，正在获取图片")
-                        async with session.get(img_url) as resp:
-                            await self.fifo.add_image(await resp.read(), self.args.control_net_control)
-                        self.message += f"，已切换至以图生图" + self.message
+                    await self.fifo.add_image(await aiohttp_func("get", img_url, byte=True), self.args.control_net_control)
+                    self.message += f"，已切换至以图生图" + self.message
                 else:
                     await UniMessage.text(f"以图生图功能已禁用").finish()
         else:

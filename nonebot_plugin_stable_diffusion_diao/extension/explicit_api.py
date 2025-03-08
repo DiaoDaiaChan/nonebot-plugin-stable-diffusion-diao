@@ -1,13 +1,13 @@
 import traceback
 
 from ..config import nickname
-from ..utils import revoke_msg
+from ..utils import revoke_msg, aiohttp_func
 from ..utils.save import save_img
 from ..utils import sendtosuperuser, pic_audit_standalone, run_later
 
 from io import BytesIO
 import base64
-import aiohttp, aiofiles
+import aiofiles
 import nonebot
 import os
 import urllib
@@ -276,10 +276,9 @@ async def check_safe(img_bytes: BytesIO, fifo, is_check=False):
             params = {"grant_type": "client_credentials",
                     "client_id": config.novelai_pic_audit_api_key["API_KEY"],
                     "client_secret": config.novelai_pic_audit_api_key["SECRET_KEY"]}
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url=url, params=params) as resp:
-                    json = await resp.json()
-                    return json["access_token"]
+            json = await aiohttp_func("post", url, params=params)
+            return json["access_token"]
+
 
         async with aiofiles.open("image.jpg", "wb") as f:
             await f.write(img_bytes)
@@ -287,6 +286,7 @@ async def check_safe(img_bytes: BytesIO, fifo, is_check=False):
         payload = 'image=' + base64_pic
         token = await get_access_token()
         baidu_api = "https://aip.baidubce.com/rest/2.0/solution/v1/img_censor/v2/user_defined?access_token=" + token
+        result = aiohttp_func("post", baidu_api, payload, headers=headers)
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.post(baidu_api, data=payload) as resp:
                 result = await resp.json()

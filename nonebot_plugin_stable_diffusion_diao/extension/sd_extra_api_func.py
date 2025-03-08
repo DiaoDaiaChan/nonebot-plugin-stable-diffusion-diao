@@ -1,4 +1,3 @@
-import nonebot_plugin_alconna
 from PIL import Image
 from PIL import ImageGrab
 import json
@@ -21,24 +20,23 @@ from ..config import config, redis_client, nickname
 from ..config import __SUPPORTED_MESSAGEEVENT__, message_event_type
 from .translation import translate
 from ..backend import AIDRAW
-from ..utils import unload_and_reload, pic_audit_standalone, aidraw_parser, run_later, txt_audit
+from ..utils import unload_and_reload, pic_audit_standalone, aidraw_parser, txt_audit, aiohttp_func
 from ..utils.load_balance import sd_LoadBalance, get_vram
 from ..utils.prepocess import prepocess_tags
 from .safe_method import send_forward_msg, risk_control
-from ..aidraw import  send_msg_and_revoke, get_message_at, first_handler
+from ..aidraw import send_msg_and_revoke, get_message_at, first_handler
 from nonebot import on_shell_command, Bot
 from nonebot.adapters import Event
-from nonebot.params import CommandArg, Arg, ShellCommandArgs, Matcher, RegexGroup
+from nonebot.params import CommandArg, ShellCommandArgs, Matcher, RegexGroup
 
-from nonebot_plugin_alconna import UniMessage, CommandResult, AlconnaResult
+from nonebot_plugin_alconna import UniMessage
 from nonebot_plugin_alconna.uniseg import UniMsg
 from nonebot import Bot
 
 from nonebot.typing import T_State
 from nonebot import logger
-from collections import Counter
 from copy import deepcopy
-from typing import Any, Annotated, Union
+from typing import Any, Annotated
 from bs4 import BeautifulSoup
 
 current_date = datetime.now().date()
@@ -538,7 +536,6 @@ class CommandHandler(SdAPI):
             if result:
                 await risk_control("检测到NSFW图片", reply_message=True, revoke_later=True)
             else:
-
                 await send_msg_and_revoke(uni_msg)
 
     @staticmethod
@@ -892,10 +889,6 @@ class CommandHandler(SdAPI):
 
             soup = BeautifulSoup(image_resp[0], 'html.parser')
             img_urls = [img['src'] for img in soup.find_all('img') if img['src'].startswith('http')][:2]
-            # post_links = [a['href'] for a in soup.find_all('a', class_='post-preview-link') if 'href' in a.attrs][:2]
-            # for post in post_links:
-            #     target_url = f"{db_base_url}{post}"
-            # logger.error(post_links)
 
             async def process_image(image_url):
                 base64_image, bytes_image = await download_img(image_url)
@@ -1207,44 +1200,6 @@ def get_all_filenames(directory, fileType=None) -> dict:
             filepath = os.path.join(root, file)
             file_path_dict[file] = filepath
     return file_path_dict
-
-
-async def aiohttp_func(way, url, payload={}, text=False, proxy=False):
-    try:
-        if way == "post":
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=1800)) as session:
-                async with session.post(
-                        url=url,
-                        json=payload,
-                        proxy=config.proxy_site if proxy else None
-                ) as resp:
-                    if resp.status in [200, 201]:
-                        if text:
-                            return await resp.text(), resp.status
-                        resp_data = await resp.json()
-                        return resp_data, resp.status
-                    else:
-                        logger.warning(f"http post请求失败，状态码为{resp.status}，返回内容为{await resp.text()}")
-                        return None, resp.status
-        else:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=1800)) as session:
-                async with session.get(
-                        url=url,
-                        proxy=config.proxy_site if proxy else None
-                ) as resp:
-                    if resp.status in [200, 201]:
-                        if text:
-                            return await resp.text(), resp.status
-                        resp_data = await resp.json()
-                        return resp_data, resp.status
-                    else:
-                        logger.warning(f"http get请求失败，状态码为{resp.status}，返回内容为{await resp.text()}")
-                        return None, resp.status
-    except Exception:
-        traceback.print_exc()
-        return None
-
-
 
 
 #

@@ -12,12 +12,10 @@ from nonebot import on_shell_command
 from argparse import Namespace
 from nonebot.log import logger
 from ..extension.safe_method import send_forward_msg
-from ..extension.sd_extra_api_func import aiohttp_func
 from ..config import config
 from ..backend import AIDRAW
 from ..utils.data import lowQuality
-from ..utils import pic_audit_standalone, txt_audit
-    
+from ..utils import pic_audit_standalone, txt_audit, aiohttp_func
 
 civitai_parser = ArgumentParser()
 civitai_parser.add_argument("-l", "--limit", "-搜索数量",type=int, help="搜索匹配数量", dest="limit")

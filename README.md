@@ -1,3 +1,6 @@
+# 本项目目前停止维护, 不过大部分功能迁移到: [nonebot-plugin-comfyui](https://github.com/DiaoDaiaChan/nonebot-plugin-comfyui)
+# 本项目目前停止维护, 不过大部分功能迁移到: [nonebot-plugin-comfyui](https://github.com/DiaoDaiaChan/nonebot-plugin-comfyui)
+# 本项目目前停止维护, 不过大部分功能迁移到: [nonebot-plugin-comfyui](https://github.com/DiaoDaiaChan/nonebot-plugin-comfyui)
 
 <p align="center">
     <img src="#" alt="" width="200" height="200">

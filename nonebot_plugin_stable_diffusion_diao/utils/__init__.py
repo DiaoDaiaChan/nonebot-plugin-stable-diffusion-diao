@@ -1,3 +1,4 @@
+import ssl
 from io import BytesIO
 
 import nonebot
@@ -9,6 +10,8 @@ import aiohttp
 import base64
 import traceback
 import random
+
+from aiohttp import TCPConnector
 
 from ..config import config
 from asyncio import get_running_loop
@@ -309,7 +312,8 @@ async def txt_audit(
         prompt='''
         接下来请你对一些聊天内容进行审核,
         如果内容出现政治/暴恐内容（特别是我国的政治人物/或者和我国相关的政治）则请你输出<yes>, 
-        如果没有则输出<no>
+        如果没有则输出<no>,
+        请注意， 和这两项(政治/暴恐)无关的内容不需要你的判断， 最后， 只输出<yes>或者<no>不需要你输出其他内容
         '''
 ):
 
@@ -352,3 +356,64 @@ def remove_punctuation(text):
         if text[i] not in string.punctuation:
             return text[i:]
     return ""
+
+
+async def aiohttp_func(way, url, payload={}, params={}, text=False, proxy=False, byte=False, headers={}):
+
+    global_ssl_context = ssl.create_default_context()
+    global_ssl_context.set_ciphers('DEFAULT')
+    global_ssl_context.options |= ssl.OP_NO_SSLv2
+    global_ssl_context.options |= ssl.OP_NO_SSLv3
+    global_ssl_context.options |= ssl.OP_NO_TLSv1
+    global_ssl_context.options |= ssl.OP_NO_TLSv1_1
+    global_ssl_context.options |= ssl.OP_NO_COMPRESSION
+
+    connector = TCPConnector(ssl=global_ssl_context)
+
+    try:
+        if way == "post":
+            async with aiohttp.ClientSession(connector=connector, timeout=aiohttp.ClientTimeout(total=1800)) as session:
+                async with session.post(
+                        url=url,
+                        json=payload,
+                        proxy=config.proxy_site if proxy else None,
+                        params=params,
+                        headers=headers
+                ) as resp:
+                    if resp.status in [200, 201]:
+
+                        if byte:
+                            return await resp.read(), resp.status
+
+                        if text:
+                            return await resp.text(), resp.status
+
+                        resp_data = await resp.json()
+                        return resp_data, resp.status
+
+                    else:
+                        logger.warning(f"http post请求失败，状态码为{resp.status}，返回内容为{await resp.text()}")
+                        return None, resp.status
+        else:
+            async with aiohttp.ClientSession(connector=connector, timeout=aiohttp.ClientTimeout(total=1800)) as session:
+                async with session.get(
+                        url=url,
+                        proxy=config.proxy_site if proxy else None,
+                        params=params,
+                        headers=headers
+                ) as resp:
+                    if resp.status in [200, 201]:
+
+                        if byte:
+                            return await resp.read(), resp.status
+
+                        if text:
+                            return await resp.text(), resp.status
+                        resp_data = await resp.json()
+                        return resp_data, resp.status
+                    else:
+                        logger.warning(f"http get请求失败，状态码为{resp.status}，返回内容为{await resp.text()}")
+                        return None, resp.status
+    except Exception:
+        traceback.print_exc()
+        return None
